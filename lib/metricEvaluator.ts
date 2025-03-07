@@ -106,7 +106,7 @@ export function calculateCustomMetrics(
           // Store the result indexed by coin for the chart
           dataPoint[metric.name][coin] = result;
         } catch (error) {
-          console.error(`Error calculating metric "${metric.name}" for ${coin}:`, error);
+          console.error(`Error calculating metric "${metric.name}" for ${coin}:`, error instanceof Error ? error.message : 'Unknown error');
           // Set a placeholder value
           const metricKey = `${coin}_${metric.name.replace(/\s+/g, '_')}`;
           dataPoint[metricKey] = null;

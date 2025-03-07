@@ -20,7 +20,7 @@ const loadMetricsFromStorage = (): CustomMetric[] => {
   try {
     return JSON.parse(storedMetrics);
   } catch (e) {
-    console.error('Failed to parse stored metrics:', e);
+    console.error('Failed to parse stored metrics:', e instanceof Error ? e.message : 'Unknown error');
     return [];
   }
 };

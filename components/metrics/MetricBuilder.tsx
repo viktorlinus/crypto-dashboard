@@ -61,7 +61,12 @@ const MetricBuilder: React.FC<MetricBuilderProps> = ({ onSave, savedMetrics = []
     try {
       const processedData = sampleData.map(dataPoint => {
         // Create a scope with data variables
-        const scope = {
+        const scope: {
+          price: number;
+          volume: number;
+          marketCap: number;
+          [key: string]: number;
+        } = {
           price: dataPoint.price || 0,
           volume: dataPoint.volume || 0,
           marketCap: dataPoint.marketCap || 0,
@@ -74,6 +79,7 @@ const MetricBuilder: React.FC<MetricBuilderProps> = ({ onSave, savedMetrics = []
           } catch (e) {
             // If a custom metric fails, just set it to 0
             scope[`custom_${metric.id}`] = 0;
+            console.error(`Failed to evaluate metric ${metric.id}:`, e instanceof Error ? e.message : 'Unknown error');
           }
         });
 
@@ -82,6 +88,7 @@ const MetricBuilder: React.FC<MetricBuilderProps> = ({ onSave, savedMetrics = []
         try {
           result = evaluate(formula, scope);
         } catch (e) {
+          console.warn(`Failed to evaluate formula: ${formula}`, e instanceof Error ? e.message : 'Unknown error');
           result = null;
         }
 
@@ -94,7 +101,8 @@ const MetricBuilder: React.FC<MetricBuilderProps> = ({ onSave, savedMetrics = []
       setPreviewData(processedData);
       setError(null);
     } catch (e) {
-      setError('Invalid formula: ' + e.message);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      setError('Invalid formula: ' + errorMessage);
       setPreviewData(null);
     }
   }, [formula, sampleData, savedMetrics]);
