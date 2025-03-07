@@ -231,8 +231,8 @@ const PriceChart: React.FC<PriceChartProps> = ({
         display: true,
         text: yAxisLabel,
         font: {
-          size: 12,
-          weight: '600',
+        size: 12,
+        weight: 'bold' as const,
         },
       },
       min: isLogarithmic ? min : undefined,
@@ -282,7 +282,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           color: coinColor,
           font: {
             size: 12,
-            weight: '600',
+            weight: 'bold' as const,
           },
         },
         min: isLogarithmic ? min : undefined,
@@ -319,7 +319,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
           padding: 20,
           font: {
             size: 12,
-            weight: '600' as const,
+            weight: 'bold' as const,
           }
         }
       },
@@ -327,8 +327,8 @@ const PriceChart: React.FC<PriceChartProps> = ({
         display: true,
         text: title,
         font: {
-          size: 16,
-          weight: '600' as const,
+        size: 16,
+        weight: 'bold' as const,
         },
         padding: {
           bottom: 20
@@ -343,7 +343,7 @@ const PriceChart: React.FC<PriceChartProps> = ({
         },
         titleFont: {
           size: 14,
-          weight: 'bold',
+          weight: 'bold' as const,
         },
         borderColor: 'rgba(0, 0, 0, 0.1)',
         borderWidth: 1,
