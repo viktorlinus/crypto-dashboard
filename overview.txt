@@ -1,0 +1,150 @@
+Certainly! Here's a comprehensive explanation of your crypto dashboard project, including both the original features and the new additions we've built today:
+
+## Crypto Dashboard Project Overview
+
+### Core Features
+Your project is a Next.js-based cryptocurrency dashboard that fetches and displays real-time data for various cryptocurrencies. It's built with TypeScript and uses Supabase as the backend database.
+
+**Key Features**:
+1. **Real-time Cryptocurrency Data**: Displays prices, market caps, and trading volumes
+2. **Interactive Charts**: Using Chart.js and react-chartjs-2 with multiple Y-axes
+3. **Multiple Coin Selection**: Allows selecting up to 5 coins to compare
+4. **Customizable Time Ranges**: 7D, 1M, 3M, 6M, 1Y, and All options
+5. **Different Data Views**: Toggle between prices, market caps, and volumes
+6. **Logarithmic Scale Toggle**: For comparing coins with large price differences
+7. **Statistics Cards**: Shows current values and percentage changes
+
+**Tech Stack**:
+- **Frontend**: React with TypeScript, Next.js
+- **Styling**: Tailwind CSS
+- **Data Visualization**: Chart.js
+- **Data Storage**: Supabase
+- **API Integration**: Using CoinGecko API (with a Python script for data collection)
+
+**Data Flow**:
+1. A Python script (`top100_supabase.py`) fetches cryptocurrency data from CoinGecko and stores it in Supabase
+2. The Next.js app fetches data from Supabase via API endpoints
+3. The UI components render the data with proper formatting and visualization
+
+### Recent Additions and Improvements
+
+#### 4. Y-Axis Visualization Mode Toggle
+We introduced a flexible Y-axis visualization mode to enhance comparative analysis:
+
+- **Dynamic Y-Axis Switching**:
+  - Added a toggle to switch between multiple and single Y-axis modes
+  - Implemented in the `PriceChart` and `AxisModeToggle` components
+  - Allows users to choose between individual and shared axis views
+
+- **Multiple Y-Axis Mode**:
+  - Each cryptocurrency gets its own scaled Y-axis
+  - Ideal for comparing coins with significantly different value ranges
+  - Color-coded axes matching the respective coin's line color
+
+- **Single Y-Axis Mode**:
+  - All cryptocurrencies plotted on a single, shared axis
+  - Enables direct visual comparison of coin values
+  - Helpful for comparing relative changes and trends
+
+- **User Experience Improvements**:
+  - Intuitive toggle switch with clear visual feedback
+  - Tooltip explaining the difference between axis modes
+  - Seamless switching between visualization modes
+
+#### 5. Enhanced Metric Data Handling and Chart Rendering
+We improved the metric data processing and chart rendering to address data inconsistencies:
+
+- **Robust Metric Data Formatting**:
+  - Enhanced `formatMetricDataForChart` function in `metricEvaluator.ts`
+  - Improved handling of coins with incomplete or missing metric data
+  - Ensures all selected coins are represented in the chart
+  - Gracefully handles null or undefined values
+
+- **Debugging and Logging Improvements**:
+  - Added comprehensive console logging for metric calculation
+  - Implemented more detailed error tracking and data validation
+  - Improved data preparation and metric evaluation processes
+
+- **Y-Axis and Coin Display Enhancements**:
+  - Modified chart rendering to support coins added mid-analysis
+  - Implemented fallback mechanisms for coins with partial data
+  - Maintained chart consistency across different coin selections
+
+#### Known Limitations and Future Improvements
+- There is still a potential rendering glitch when adding or removing coins from the chart
+- Future work will focus on further stabilizing the dynamic coin selection and metric calculation process
+
+### Previous Additions
+
+#### 1. Historical Coin Tracking System
+We enhanced the data collection and storage system to track coins even after they fall out of the top 100:
+
+- **New Database Tables**:
+  - `tracked_coins`: Stores information about all coins we're tracking
+  - `crypto_rankings`: Stores daily rankings of coins
+
+- **Modified Python Script**:
+  - Records daily rankings in the `crypto_rankings` table
+  - Tracks which coins are currently in the top 100 vs. historical coins
+  - Updates the `last_in_top100` date for existing coins
+  - Fetches data for both current top 100 and recently relevant historical coins
+
+- **Enhanced API Endpoints**:
+  - Updated to accept a `scope` parameter with values 'current' or 'all'
+  - Returns either current top 100 coins or all tracked coins
+  - Ensures data continuity for historical analysis
+
+- **UI Updates**:
+  - Added toggle buttons for switching between current and all tracked coins
+  - Clear status indicator showing which scope is active
+
+#### 2. Multiple Y-Axes Chart Enhancement
+We improved the chart visualization to make it easier to compare cryptocurrencies with vastly different price ranges:
+
+- **Individual Y-Axes**: Each cryptocurrency now has its own Y-axis with an appropriate scale
+- **Color Coordination**: Each axis is colored to match its corresponding cryptocurrency line
+- **Enhanced Tooltip**: Shows percent change information from the first value in the selected time range
+- **Custom Scales**: Automatic scaling based on each coin's min/max values
+
+#### 3. Metrics Workbench
+We created a powerful workbench for building custom metrics:
+
+- **New Components**:
+  - `MetricBuilder`: UI for creating custom metrics using formulas
+  - `MetricsWorkbench`: Manages saved metrics and provides the workbench interface
+  - `metricEvaluator`: Backend library for calculating custom metrics
+
+- **Formula System**:
+  - Support for basic operations (add, subtract, multiply, divide)
+  - Mathematical functions (sqrt, log, abs)
+  - Combinations of different metrics (price, volume, market cap)
+
+- **Data Persistence**:
+  - Custom metrics are saved to localStorage
+  - Can be referenced across sessions
+  - Support for formula descriptions and documentation
+
+- **Visualization**:
+  - Custom metrics get their own chart view
+  - Clear labeling and information display
+  - Toggleable between standard data and custom metrics
+
+### Implementation Details
+
+#### Historical Tracking
+1. The system tracks when coins enter and exit the top 100
+2. Data continuity is maintained for coins that drop out of rankings
+3. A smart 30-day cutoff prevents unlimited growth of tracked coins
+
+#### Chart Enhancement
+1. Each cryptocurrency has its own appropriately scaled Y-axis
+2. Visual improvements make it easier to see relative price movements
+3. Color coordination makes it intuitive to match lines with their scales
+
+#### Metrics Workbench
+1. Formula builder with dropdown selectors for metrics and operations
+2. Preview of calculation results before saving
+3. Management interface for saved metrics
+4. Integration with the main chart system
+
+This comprehensive system gives you a powerful tool for cryptocurrency analysis, combining real-time data with historical context and customizable analytics.
