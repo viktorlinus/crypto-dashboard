@@ -27,6 +27,20 @@ export function calculateCustomMetrics(
 ): ProcessedDataPoint[] {
   if (!data || data.length === 0) return [];
   if (!metrics || metrics.length === 0) return data as ProcessedDataPoint[];
+  
+  // Validate formulas early to avoid errors during processing
+  const validMetrics = metrics.filter(metric => {
+    try {
+      // Test the formula with a simple scope
+      evaluate(metric.formula, { price: 1, volume: 1, marketCap: 1 });
+      return true;
+    } catch (error) {
+      console.error(`Invalid formula in metric "${metric.name}": ${metric.formula}`, error instanceof Error ? error.message : 'Unknown error');
+      return false;
+    }
+  });
+  
+  if (validMetrics.length === 0) return data as ProcessedDataPoint[];
 
   // Clone the data to avoid modifying the original
   const processedData: ProcessedDataPoint[] = JSON.parse(JSON.stringify(data));
@@ -89,7 +103,7 @@ export function calculateCustomMetrics(
       };
 
       // Process each metric for this coin
-      metrics.forEach(metric => {
+      validMetrics.forEach(metric => {
         try {
           // Evaluate the formula with the current scope
           const result = evaluate(metric.formula, scope);
@@ -131,6 +145,13 @@ export function formatMetricDataForChart(
   coins: string[]
 ): any[] {
   console.log(`Formatting metric ${metricName} for coins: ${coins}`);
+  
+  // Safety check
+  if (!processedData || !Array.isArray(processedData) || processedData.length === 0) {
+    console.error('No processed data available for formatting');
+    return [];
+  }
+  
   console.log('Processed Data:', processedData);
 
   const formattedData = processedData.map(point => {

@@ -53,7 +53,8 @@ const MetricBuilder: React.FC<MetricBuilderProps> = ({ onSave, savedMetrics = []
 
   // Parse and evaluate formula to generate preview data
   useEffect(() => {
-    if (!formula || !sampleData || sampleData.length === 0) {
+    // Don't try to evaluate if formula is too short or missing data
+    if (!formula || formula.length < 3 || !sampleData || sampleData.length === 0) {
       setPreviewData(null);
       return;
     }
@@ -256,7 +257,7 @@ const MetricBuilder: React.FC<MetricBuilderProps> = ({ onSave, savedMetrics = []
           <h3 className="text-md font-medium mb-2">Preview</h3>
           <div className="bg-gray-50 p-3 rounded-md">
             <p className="text-sm text-gray-500">
-              Sample values: {previewData.slice(-3).map(d => d.value ? d.value.toFixed(6) : 'N/A').join(', ')}
+            Sample values: {previewData.slice(-3).map(d => d.value !== null && d.value !== undefined && typeof d.value === 'number' ? d.value.toFixed(6) : 'N/A').join(', ')}
             </p>
           </div>
         </div>

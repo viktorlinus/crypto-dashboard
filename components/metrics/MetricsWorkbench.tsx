@@ -18,9 +18,27 @@ const loadMetricsFromStorage = (): CustomMetric[] => {
   if (!storedMetrics) return [];
   
   try {
-    return JSON.parse(storedMetrics);
+    const parsed = JSON.parse(storedMetrics);
+    
+    // Validate the loaded metrics to ensure they have all required fields
+    return parsed.filter((metric: any) => {
+      const isValid = 
+        metric && 
+        typeof metric === 'object' &&
+        typeof metric.id === 'string' && 
+        typeof metric.name === 'string' && 
+        typeof metric.formula === 'string';
+      
+      if (!isValid) {
+        console.error('Invalid metric found in storage:', metric);
+      }
+      
+      return isValid;
+    });
   } catch (e) {
     console.error('Failed to parse stored metrics:', e instanceof Error ? e.message : 'Unknown error');
+    // Clear corrupted storage
+    localStorage.removeItem('customMetrics');
     return [];
   }
 };
