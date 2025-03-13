@@ -4,8 +4,9 @@
 
 [build.environment]
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
+  PYTHON_REQUIREMENTS_INSTALL_SKIP = "true"
   PYTHON_VERSION = "3.9"
-  REQUIREMENTS_FILE = "netlify-requirements.txt"
+  NODE_VERSION = "18"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
