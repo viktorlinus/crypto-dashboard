@@ -21,6 +21,8 @@
     "postcss": "^8.4.32",
     "autoprefixer": "^10.4.16",
     "mathjs": "^12.2.0",
+    "plotly.js": "^2.29.0",
+    "react-plotly.js": "^2.6.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
