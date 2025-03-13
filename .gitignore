@@ -69,3 +69,8 @@ var/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Google Cloud credentials
+*-[0-9]*.json
+funding-*.json
+liquidity-*.json
