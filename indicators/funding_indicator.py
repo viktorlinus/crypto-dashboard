@@ -15,21 +15,70 @@ from googleapiclient.discovery import build
 import ta  # Technical Analysis library
 import base64
 import logging
+import re
 from dotenv import load_dotenv
 from supabase import create_client, Client
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
-SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+# Try to get Supabase credentials from environment
+def get_supabase_client():
+    """Create and return a Supabase client using environment variables"""
+    # Try to get Supabase credentials from environment
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
+    
+    # If not found, try alternate names
+    if not supabase_url:
+        supabase_url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+    
+    if not supabase_key:
+        # Try service role key first, then anon key
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+        if not supabase_key:
+            supabase_key = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+    
+    # Validate credentials
+    if not supabase_url or not supabase_key:
+        # Try to read from .env.local as fallback
+        try:
+            logger.info("Trying to read Supabase credentials from .env.local")
+            with open('.env.local', 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        match = re.match(r'^([A-Za-z0-9_]+)=(.*)$', line)
+                        if match:
+                            key, value = match.groups()
+                            if key == "SUPABASE_URL" or key == "NEXT_PUBLIC_SUPABASE_URL":
+                                supabase_url = value
+                            elif key in ["SUPABASE_KEY", "SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]:
+                                supabase_key = value
+            logger.info("Finished reading .env.local file")
+        except Exception as e:
+            logger.warning(f"Error reading .env.local file: {e}")
+    
+    # Final validation
+    if not supabase_url or not supabase_key:
+        logger.error("Supabase credentials not found in environment variables or .env.local")
+        raise ValueError("Supabase credentials required")
+    
+    logger.info(f"Creating Supabase client with URL: {supabase_url[:20]}...")
+    return create_client(supabase_url, supabase_key)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
+# Initialize Supabase client
+try:
+    supabase = get_supabase_client()
+except Exception as e:
+    logger.error(f"Failed to initialize Supabase client: {e}")
+    supabase = None  # Set to None to avoid errors when importing
 
 from .base_indicator import BaseIndicator
-
-logger = logging.getLogger(__name__)
 
 class FundingIndicator(BaseIndicator):
     """
@@ -100,6 +149,9 @@ class FundingIndicator(BaseIndicator):
             'upperBand': 0.2,                  # Upper STD multiplier for ROC
             'lowerBand': 0.1,                  # Lower STD multiplier for ROC
         }
+        
+        # Ensure Supabase client is initialized
+        self.supabase = supabase or get_supabase_client()
         
         # Load the logo if available
         self.logo_encoded = None
@@ -520,7 +572,7 @@ class FundingIndicator(BaseIndicator):
         # Update layout
         fig.update_layout(
             title={
-                'text': "AE's Bitcoin Buy/Sell System", 
+                'text': "Bitcoin Funding Rate Indicator", 
                 'x': 0.5, 
                 'y': 0.95, 
                 'xanchor': 'center', 
@@ -610,78 +662,3 @@ class FundingIndicator(BaseIndicator):
         fig.update_yaxes(range=[-0.06, 0.3], fixedrange=False, secondary_y=True, color=text_color)
 
         return fig
-
-def generate_data(self, params=None):
-    """
-    Generate data for the funding indicator and save to Supabase.
-    """
-    try:
-        # Merge default params with any custom params
-        custom_params = self.validate_params(params)
-        chart_params = self.default_params.copy()
-
-        # Update parameters with user-defined values
-        for key, value in custom_params.items():
-            if key in chart_params:
-                if isinstance(chart_params[key], int):
-                    chart_params[key] = int(value)
-                elif isinstance(chart_params[key], float):
-                    chart_params[key] = float(value)
-
-        # Load data from Google Sheets
-        ohlc_data = self.load_google_sheets_data('cleaned_price_data!A:E')
-        funding_data = self.load_google_sheets_data('fr2!A:F')
-
-        # Process funding rate data
-        funding_data.rename(columns={'FundingRateIndex': 'fr'}, inplace=True)
-        funding_data['fr'] = pd.to_numeric(funding_data['fr'], errors='coerce')
-        funding_data['fr'] = funding_data['fr'].ffill()
-
-        # Inside the generate_data method, before filtering by period:
-        period = custom_params.get('period', None)
-
-        if period and period != "all":  # ✅ Only filter if period is NOT "all"
-            ohlc_data, funding_data = self.filter_by_period(ohlc_data, funding_data, period)
-
-
-        # Merge OHLC and funding data
-        start_date = max(ohlc_data.index.min(), funding_data.index.min())
-        ohlc_data = ohlc_data.loc[start_date:]
-        funding_data = funding_data.loc[start_date:]
-        full_data = ohlc_data.join(funding_data[['fr']], how='inner')
-
-        # Process indicator calculations
-        processed_data = self.dip_hunter_with_funding_and_sopr(full_data, chart_params)
-
-        # Create the plot
-        theme = custom_params.get('theme', 'light')
-        fig = self.plot_signals(processed_data, theme)
-        plotly_json = fig.to_json()
-
-        # Prepare metadata
-        latest_data = {
-            "timestamp": processed_data.index[-1].strftime('%Y-%m-%d'),
-            "close": float(processed_data['close'].iloc[-1]),
-            "funding_rate": float(processed_data['fr'].iloc[-1]),
-            "rsi": float(processed_data['rsi'].iloc[-1]),
-            "bull_buy_signal": bool(processed_data['bullBuy'].iloc[-1]),
-            "bear_buy_signal": bool(processed_data['bearBuy'].iloc[-1]),
-            "sell_signal": bool(processed_data['sellSignal'].iloc[-1]),
-            "weak_sell_signal": bool(processed_data['weakSellSignal'].iloc[-1])
-        }
-
-        # ✅ Save to Supabase
-        data = {
-            "indicator_name": "funding_rate",
-            "plotly_json": plotly_json,
-            "latest_data": latest_data
-        }
-
-        response = self.supabase.table("indicators").insert(data).execute()
-        print("Saved to Supabase:", response)
-
-        return {"plotly_json": plotly_json, "latest_data": latest_data}
-
-    except Exception as e:
-        logger.exception("Error generating funding indicator data")
-        return {"error": str(e)}
