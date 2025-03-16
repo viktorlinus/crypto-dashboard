@@ -1,0 +1,46 @@
+name: Daily Funding Indicator Update
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  
+  # Allow manual triggering from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  update-funding-indicator:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Create .env.local file
+      run: |
+        echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env.local
+        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
+        echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.local
+        echo "SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
+        echo "SUPABASE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.local
+        
+    - name: Create funding credentials file
+      # The funding credentials JSON file needs to be created from the secret
+      run: echo '${{ secrets.FUNDING_CREDENTIALS_JSON }}' > funding-435016-442a60c70683.json
+      
+    - name: Run funding indicator updater
+      run: python save_to_supabase.py
+      
+    - name: Log completion
+      run: echo "Funding indicator has been updated successfully at $(date)"
