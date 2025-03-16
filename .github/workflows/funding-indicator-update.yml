@@ -20,128 +20,25 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        cache: 'pip'
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Create .env.local file
-      run: |
-        echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env.local
-        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
-        echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.local
-        echo "SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
-        echo "SUPABASE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.local
+        pip install supabase pandas google-auth google-api-python-client plotly ta
         
     - name: Create funding credentials file
-      # The funding credentials JSON file needs to be created from the secret
       run: echo '${{ secrets.FUNDING_CREDENTIALS_JSON }}' > funding-435016-442a60c70683.json
       
-    - name: Verify environment variables
-      run: |
-        echo "Verifying environment variables before running script..."
-        grep SUPABASE_URL .env.local
-        grep SUPABASE_KEY .env.local
-        
-    - name: Run direct supabase update script
-      run: |
-        # Create a temporary script to update Supabase directly
-        cat > update_funding.py << 'EOF'
-        #!/usr/bin/env python
-        """Quick script to update funding indicator data"""
-        import os
-        import json
-        from supabase import create_client
-        from datetime import datetime
-        import logging
-
-        # Setup logging
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger("funding_update")
-
-        # Get environment variables directly
-        supabase_url = os.environ.get("SUPABASE_URL")
-        supabase_key = os.environ.get("SUPABASE_KEY")
-
-        if not supabase_url or not supabase_key:
-            logger.error("Supabase credentials not found in environment")
-            logger.info(f"SUPABASE_URL found: {bool(supabase_url)}")
-            logger.info(f"SUPABASE_KEY found: {bool(supabase_key)}")
-            
-            # Try reading from .env.local as fallback
-            try:
-                with open('.env.local', 'r') as f:
-                    for line in f:
-                        if line.startswith('SUPABASE_URL='):
-                            supabase_url = line.strip().split('=', 1)[1]
-                        elif line.startswith('SUPABASE_KEY='):
-                            supabase_key = line.strip().split('=', 1)[1]
-                logger.info("Read values from .env.local file")
-                logger.info(f"SUPABASE_URL found: {bool(supabase_url)}")
-                logger.info(f"SUPABASE_KEY found: {bool(supabase_key)}")
-            except Exception as e:
-                logger.error(f"Error reading .env.local: {e}")
-                
-            if not supabase_url or not supabase_key:
-                raise ValueError("Supabase credentials required")
-
-        # Initialize Supabase client
-        logger.info(f"Initializing Supabase client with URL: {supabase_url[:20]}...")
-        supabase = create_client(supabase_url, supabase_key)
-        
-        # Execute a simple query to test connection
-        try:
-            response = supabase.table("indicators").select("*").limit(1).execute()
-            logger.info(f"Connection test successful. Found {len(response.data)} indicator(s)")
-        except Exception as e:
-            logger.error(f"Connection test failed: {e}")
-            raise
-            
-        # Use existing save_to_supabase function if possible
-        try:
-            logger.info("Trying to import and run the main save_to_supabase function")
-            from save_to_supabase import save_to_supabase
-            save_to_supabase()
-            logger.info("Successfully updated funding indicator data")
-        except Exception as e:
-            logger.error(f"Error using save_to_supabase: {e}")
-            logger.info("Falling back to simplified indicator data update")
-            
-            # Simplified data update as fallback
-            today = datetime.now().strftime('%Y-%m-%d')
-            mock_data = {
-                "indicator_name": "funding_rate",
-                "date": today,
-                "latest_data": {
-                    "timestamp": today,
-                    "close": 66000.0,
-                    "funding_rate": 0.0001,
-                    "rsi": 45.0,
-                    "bull_buy_signal": False,
-                    "bear_buy_signal": False,
-                    "sell_signal": False,
-                    "weak_sell_signal": False
-                }
-            }
-            
-            try:
-                result = supabase.table("indicators").upsert(mock_data, on_conflict="indicator_name").execute()
-                logger.info(f"Fallback update successful: {result}")
-            except Exception as e:
-                logger.error(f"Fallback update failed: {e}")
-                raise
-        
-        logger.info("Script completed")
-        EOF
-        
-        # Make the script executable and run it
-        chmod +x update_funding.py
-        python update_funding.py
+    - name: Run CI update script
+      run: python ci_update_funding.py
       env:
         SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
     - name: Log completion
+      if: success()
       run: echo "Funding indicator has been updated successfully at $(date)"
+      
+    - name: Log failure
+      if: failure()
+      run: echo "Failed to update funding indicator at $(date)"
