@@ -1,15 +1,15 @@
-name: Daily Indicators Update
+name: Daily AVS Indicator Update
 
 on:
   schedule:
-    # Run daily at 2 AM UTC
-    - cron: '0 2 * * *'
+    # Run daily at 3 AM UTC (an hour after the funding indicator to stagger API calls)
+    - cron: '0 3 * * *'
   
   # Allow manual triggering from the Actions tab
   workflow_dispatch:
 
 jobs:
-  update-indicators:
+  update-avs-indicator:
     runs-on: ubuntu-latest
     
     steps:
@@ -24,21 +24,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install supabase pandas google-auth google-api-python-client plotly ta gspread oauth2client
+        pip install supabase pandas google-auth google-api-python-client gspread plotly oauth2client
         
-    - name: Create funding credentials file
-      run: echo '${{ secrets.FUNDING_CREDENTIALS_JSON }}' > funding-435016-442a60c70683.json
-      
-    - name: Create AVS credentials file
+    - name: Create secrets file
       run: echo '${{ secrets.AVS_CREDENTIALS_JSON }}' > secret_key.json
       
-    - name: Run funding indicator update
-      run: python ci_update_funding.py
-      env:
-        SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-        SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      
-    - name: Run AVS indicator update
+    - name: Run CI update script
       run: python ci_update_avs.py
       env:
         SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -46,8 +37,8 @@ jobs:
       
     - name: Log completion
       if: success()
-      run: echo "Indicators have been updated successfully at $(date)"
+      run: echo "AVS indicator has been updated successfully at $(date)"
       
     - name: Log failure
       if: failure()
-      run: echo "Failed to update indicators at $(date)"
+      run: echo "Failed to update AVS indicator at $(date)"

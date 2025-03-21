@@ -75,3 +75,4 @@ var/
 *-[0-9]*.json
 funding-*.json
 liquidity-*.json
+secret_key.json

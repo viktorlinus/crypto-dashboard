@@ -181,24 +181,24 @@ export default function IndicatorsPage() {
             </div>
           </div>
           
-          {/* Placeholder for future featured indicators */}
-          <div className="bg-gray-100 rounded-lg shadow overflow-hidden opacity-60">
+          {/* AVS Average Indicator Card */}
+          <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-4">
-              <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
+              <h3 className="text-lg font-semibold mb-2">BTC Value Range System</h3>
               <p className="text-gray-600 text-sm mb-4">
-                More specialized indicators coming soon
+                Identifies optimal buy/sell zones based on the AVS average
               </p>
-              <div className="h-32 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-xl font-medium text-gray-500">
-                  Future Indicator
+              <div className="h-32 bg-gradient-to-r from-green-100 to-red-100 rounded-lg mb-4 flex items-center justify-center">
+                <span className="text-2xl font-bold text-blue-700">
+                  AVS Average
                 </span>
               </div>
-              <button 
-                className="block w-full text-center py-2 px-4 bg-gray-400 text-white rounded cursor-not-allowed"
-                disabled
+              <Link 
+                href="/indicators/avs" 
+                className="block text-center py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
               >
-                Coming Soon
-              </button>
+                View Indicator
+              </Link>
             </div>
           </div>
         </div>
